@@ -235,8 +235,31 @@
     document.querySelectorAll('.delParentBtn').forEach(btn=>btn.addEventListener('click',(e)=>{let code=btn.dataset.code;deleteParentCode(code);render();}));
   }
 
-  document.querySelectorAll('.nav-item').forEach(link=>{link.addEventListener('click',(e)=>{e.preventDefault();currentPage=link.dataset.page;render();document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active-nav'));link.classList.add('active-nav');});});
-  render();
+  document.querySelectorAll('.nav-item').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    currentPage = link.dataset.page;
+
+    render();
+
+    document.querySelectorAll('.nav-item').forEach(l => {
+      l.classList.remove('active-nav');
+    });
+
+    link.classList.add('active-nav');
+  });
+});
+
+document.querySelector('[data-page="dashboard"]').classList.add('active-nav');
+
+render();document.querySelectorAll('.nav-item').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    currentPage = link.dataset.page;
+
+    render();
 </script>
 </body>
 </html>
