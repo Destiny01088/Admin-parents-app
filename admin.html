@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduManage Pro | School Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #f4f7fc; }
+    .active-nav { background: rgba(59,130,246,0.12); color: #2563eb; border-left: 3px solid #2563eb; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 12px 20px; z-index: 999; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+<div class="flex h-screen overflow-hidden">
+  <!-- Sidebar -->
+  <aside class="w-72 bg-white shadow-xl overflow-y-auto border-r">
+    <div class="px-6 py-6 flex items-center gap-3 border-b">
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center"><i class="fas fa-school text-white text-xl"></i></div>
+      <div><h1 class="text-xl font-bold">EduManage<span class="text-blue-600">Pro</span></h1><p class="text-xs text-gray-500">Admin Console</p></div>
+    </div>
+    <nav class="flex flex-col px-3 py-6 gap-1">
+      <a href="#" data-page="dashboard" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+      <a href="#" data-page="students" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50"><i class="fas fa-user-graduate"></i> Students</a>
+      <a href="#" data-page="teachers" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50"><i class="fas fa-chalkboard-user"></i> Teachers</a>
+      <a href="#" data-page="classes" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50"><i class="fas fa-layer-group"></i> Classes</a>
+      <a href="#" data-page="fees" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50"><i class="fas fa-coins"></i> Fees</a>
+      <a href="#" data-page="exams" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50"><i class="fas fa-pen-to-square"></i> Exams</a>
+      <a href="#" data-page="timetable" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50"><i class="fas fa-table-list"></i> Timetable</a>
+      <a href="#" data-page="ailessons" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50"><i class="fas fa-robot text-indigo-500"></i> AI Lessons & Calls</a>
+      <a href="#" data-page="parents" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50"><i class="fas fa-users"></i> Parent Accounts</a>
+    </nav>
+  </aside>
+
+  <main class="flex-1 overflow-y-auto bg-gray-50">
+    <div class="sticky top-0 bg-white/80 backdrop-blur shadow-sm px-8 py-4 flex justify-between items-center border-b">
+      <h2 id="pageTitle" class="text-2xl font-semibold">Dashboard</h2>
+      <div class="flex items-center gap-4"><i class="far fa-bell text-xl"></i><div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">AD</div></div>
+    </div>
+    <div id="dynamicContent" class="p-6 md:p-8"></div>
+  </main>
+</div>
+
+<script>
+  // ----------------------------- DATA INITIALIZATION -----------------------------
+  function initData() {
+    if (!localStorage.getItem('school_students')) {
+      localStorage.setItem('school_students', JSON.stringify([
+        { id: 1, name: "Emily Clarke", class: "10A", roll: "101", parentName: "Laura Clarke", parentPhone: "+1 234 567 890", feeStatus: "Paid" },
+        { id: 2, name: "James Wilson", class: "10B", roll: "102", parentName: "Mark Wilson", parentPhone: "+1 234 567 891", feeStatus: "Pending" },
+        { id: 3, name: "Sophia Martinez", class: "9A", roll: "201", parentName: "Elena Martinez", parentPhone: "+1 234 567 892", feeStatus: "Paid" },
+        { id: 4, name: "Liam Johnson", class: "12A", roll: "301", parentName: "David Johnson", parentPhone: "+1 234 567 893", feeStatus: "Overdue" },
+        { id: 5, name: "Olivia Brown", class: "11B", roll: "205", parentName: "Sarah Brown", parentPhone: "+1 234 567 894", feeStatus: "Paid" },
+      ]));
+    }
+    if (!localStorage.getItem('school_fees')) {
+      localStorage.setItem('school_fees', JSON.stringify([
+        { id: 1, studentId: 1, studentName: "Emily Clarke", class: "10A", amount: 4500, dueDate: "2025-04-10", status: "Paid" },
+        { id: 2, studentId: 2, studentName: "James Wilson", class: "10B", amount: 4500, dueDate: "2025-04-15", status: "Pending" },
+        { id: 3, studentId: 3, studentName: "Sophia Martinez", class: "9A", amount: 4200, dueDate: "2025-04-05", status: "Paid" },
+        { id: 4, studentId: 4, studentName: "Liam Johnson", class: "12A", amount: 5000, dueDate: "2025-04-20", status: "Overdue" },
+      ]));
+    }
+    if (!localStorage.getItem('school_teachers')) {
+      localStorage.setItem('school_teachers', JSON.stringify([
+        { id: 1, name: "Dr. Sarah Adams", subject: "Mathematics", classAssigned: "10A, 12A", phone: "9876543210" },
+        { id: 2, name: "Mr. Robert Kane", subject: "Physics", classAssigned: "11A, 11B", phone: "9876543211" },
+        { id: 3, name: "Ms. Lisa Wong", subject: "English", classAssigned: "9A, 10B", phone: "9876543212" },
+      ]));
+    }
+    if (!localStorage.getItem('school_classes')) {
+      localStorage.setItem('school_classes', JSON.stringify([
+        { id: 1, className: "Class 9A", teacherIncharge: "Ms. Lisa Wong", strength: 32 },
+        { id: 2, className: "Class 10A", teacherIncharge: "Dr. Sarah Adams", strength: 28 },
+        { id: 3, className: "Class 10B", teacherIncharge: "Ms. Lisa Wong", strength: 25 },
+        { id: 4, className: "Class 11B", teacherIncharge: "Mr. Robert Kane", strength: 30 },
+        { id: 5, className: "Class 12A", teacherIncharge: "Dr. Sarah Adams", strength: 22 },
+      ]));
+    }
+    if (!localStorage.getItem('school_exams')) {
+      localStorage.setItem('school_exams', JSON.stringify([
+        { id: 1, examName: "Mid Terms", class: "10A", date: "2025-05-12", time: "9:00 AM", subjects: "Math, Science" },
+        { id: 2, examName: "Final Exams", class: "12A", date: "2025-06-05", time: "10:30 AM", subjects: "Physics, Chemistry" },
+        { id: 3, examName: "Weekly Test", class: "9A", date: "2025-04-18", time: "8:30 AM", subjects: "English" },
+      ]));
+    }
+    if (!localStorage.getItem('school_timetable')) {
+      localStorage.setItem('school_timetable', JSON.stringify([
+        { day: "Monday", p1: "Mathematics", p2: "Physics", p3: "English", p4: "Computer" },
+        { day: "Tuesday", p1: "Chemistry", p2: "Mathematics", p3: "History", p4: "PE" },
+        { day: "Wednesday", p1: "English", p2: "Biology", p3: "Mathematics", p4: "Art" },
+        { day: "Thursday", p1: "Physics", p2: "Computer", p3: "Mathematics", p4: "Geography" },
+        { day: "Friday", p1: "Islamic Studies", p2: "Mathematics", p3: "Sports", p4: "Library" },
+      ]));
+    }
+    if (!localStorage.getItem('school_ai_lessons')) {
+      localStorage.setItem('school_ai_lessons', JSON.stringify([]));
+    }
+    if (!localStorage.getItem('school_parents')) {
+      localStorage.setItem('school_parents', JSON.stringify([
+        { code: "PARENT101", studentIds: [1], name: "Laura Clarke" },
+        { code: "PARENT102", studentIds: [2], name: "Mark Wilson" },
+        { code: "PARENT103", studentIds: [3], name: "Elena Martinez" },
+      ]));
+    }
+  }
+  initData();
+
+  // Helper functions
+  function getStudents() { return JSON.parse(localStorage.getItem('school_students')); }
+  function setStudents(val) { localStorage.setItem('school_students', JSON.stringify(val)); }
+  function getFees() { return JSON.parse(localStorage.getItem('school_fees')); }
+  function setFees(val) { localStorage.setItem('school_fees', JSON.stringify(val)); }
+  function getTeachers() { return JSON.parse(localStorage.getItem('school_teachers')); }
+  function setTeachers(val) { localStorage.setItem('school_teachers', JSON.stringify(val)); }
+  function getClasses() { return JSON.parse(localStorage.getItem('school_classes')); }
+  function getExams() { return JSON.parse(localStorage.getItem('school_exams')); }
+  function getTimetable() { return JSON.parse(localStorage.getItem('school_timetable')); }
+  function getLessons() { return JSON.parse(localStorage.getItem('school_ai_lessons')); }
+  function setLessons(val) { localStorage.setItem('school_ai_lessons', JSON.stringify(val)); }
+  function getParents() { return JSON.parse(localStorage.getItem('school_parents')); }
+  function setParents(val) { localStorage.setItem('school_parents', JSON.stringify(val)); }
+
+  // CRUD for students
+  function addStudent(name, className, roll, parentName, parentPhone) {
+    let students = getStudents();
+    let newId = students.length + 1;
+    students.push({ id: newId, name, class: className, roll, parentName, parentPhone, feeStatus: "Pending" });
+    setStudents(students);
+    // also create fee record
+    let fees = getFees();
+    fees.push({ id: Date.now(), studentId: newId, studentName: name, class: className, amount: 4500, dueDate: "2025-05-30", status: "Pending" });
+    setFees(fees);
+  }
+  function deleteStudentById(id) {
+    let students = getStudents().filter(s => s.id !== id);
+    setStudents(students);
+    let fees = getFees().filter(f => f.studentId !== id);
+    setFees(fees);
+  }
+  // Teachers
+  function addTeacher(name, subject, classAssigned, phone) {
+    let teachers = getTeachers();
+    teachers.push({ id: Date.now(), name, subject, classAssigned, phone });
+    setTeachers(teachers);
+  }
+  function deleteTeacherById(id) {
+    setTeachers(getTeachers().filter(t => t.id !== id));
+  }
+  // AI Lesson + simulated call
+  function addAILesson(title, content, targetClass, enableCall) {
+    let lessons = getLessons();
+    let newLesson = { id: Date.now(), title, content, targetClass, aiCallTriggered: enableCall, callStatus: enableCall ? "Pending" : "Not triggered", timestamp: new Date().toLocaleString(), callsMade: 0 };
+    lessons.unshift(newLesson);
+    setLessons(lessons);
+    if (enableCall) simulateAICalls(newLesson);
+  }
+  function simulateAICalls(lesson) {
+    let students = getStudents();
+    let targets = lesson.targetClass === "All Students" ? students : students.filter(s => s.class === lesson.targetClass);
+    if (targets.length === 0) return;
+    lesson.callStatus = "Calling parents...";
+    setLessons(getLessons().map(l => l.id === lesson.id ? lesson : l));
+    setTimeout(() => {
+      lesson.callStatus = `Completed ✅ (${targets.length} calls)`;
+      lesson.callsMade = targets.length;
+      setLessons(getLessons().map(l => l.id === lesson.id ? lesson : l));
+      showToast(`📞 AI calls sent to ${targets.length} parents for lesson: ${lesson.title}`);
+    }, 1500);
+  }
+  function showToast(msg) {
+    let toast = document.createElement('div'); toast.className = "toast"; toast.innerHTML = `<i class="fas fa-info-circle text-blue-500"></i> ${msg}`;
+    document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000);
+  }
+  // Parent account management
+  function addParentCode(code, studentIds, parentName) {
+    let parents = getParents();
+    if (parents.find(p => p.code === code)) { alert("Code already exists"); return false; }
+    parents.push({ code, studentIds, name: parentName });
+    setParents(parents);
+    return true;
+  }
+  function deleteParentCode(code) {
+    setParents(getParents().filter(p => p.code !== code));
+  }
+
+  // Rendering functions (simplified for brevity – full version in final deliverable)
+  let currentPage = "dashboard";
+  function render() {
+    let html = "";
+    if (currentPage === "dashboard") html = renderDashboard();
+    else if (currentPage === "students") html = renderStudents();
+    else if (currentPage === "teachers") html = renderTeachers();
+    else if (currentPage === "classes") html = renderClasses();
+    else if (currentPage === "fees") html = renderFees();
+    else if (currentPage === "exams") html = renderExams();
+    else if (currentPage === "timetable") html = renderTimetable();
+    else if (currentPage === "ailessons") html = renderAILessons();
+    else if (currentPage === "parents") html = renderParents();
+    document.getElementById('dynamicContent').innerHTML = html;
+    document.getElementById('pageTitle').innerText = currentPage.charAt(0).toUpperCase() + currentPage.slice(1);
+    attachEvents();
+    if (currentPage === "dashboard") setTimeout(() => { const ctx = document.getElementById('attChart')?.getContext('2d'); if(ctx) new Chart(ctx, { type: 'line', data: { labels: ['W1','W2','W3','W4'], datasets: [{ label: 'Attendance %', data: [88,91,94,92], borderColor: '#3b82f6' }] } }); }, 100);
+  }
+
+  function renderDashboard() {
+    let students = getStudents(), teachers = getTeachers(), fees = getFees(), lessons = getLessons();
+    return `<div class="grid grid-cols-4 gap-5 mb-6">${[[students.length,"Students","users"],[teachers.length,"Teachers","chalkboard-user"],[fees.filter(f=>f.status!="Paid").length,"Pending Fees","coins"],[lessons.reduce((a,l)=>a+(l.callsMade||0),0),"AI Calls","phone-alt"]].map(([val,label,icon])=>`<div class="bg-white p-5 rounded-2xl shadow"><i class="fas fa-${icon} text-blue-500 text-xl"></i><h3 class="text-2xl font-bold">${val}</h3><p class="text-gray-500">${label}</p></div>`).join('')}</div><div class="bg-white p-4 rounded-2xl"><canvas id="attChart" height="100"></canvas></div>`;
+  }
+  function renderStudents() { let students=getStudents(); return `<div class="bg-white p-6 rounded-2xl"><div class="flex justify-between"><h2 class="text-xl font-bold">Students</h2><button id="addStudentBtn" class="bg-blue-600 text-white px-4 py-2 rounded-xl">+ Add</button></div><table class="w-full mt-4"><thead><tr><th>Name</th><th>Class</th><th>Parent</th><th>Fee</th><th></th></tr></thead><tbody>${students.map(s=>`<tr><td>${s.name}</td><td>${s.class}</td><td>${s.parentName}</td><td>${s.feeStatus}</td><td><button data-id="${s.id}" class="delStBtn text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`; }
+  function renderTeachers() { let teachers=getTeachers(); return `<div class="bg-white p-6 rounded-2xl"><div class="flex justify-between"><h2>Teachers</h2><button id="addTeacherBtn" class="bg-indigo-600 text-white px-4 py-2">+ Add</button></div><table>${teachers.map(t=>`<tr><td>${t.name}</td><td>${t.subject}</td><td>${t.classAssigned}</td><td><button data-id="${t.id}" class="delTeachBtn text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</table></div>`; }
+  function renderClasses() { return `<div class="bg-white p-6 rounded-2xl"><h2>Classes</h2><div class="grid grid-cols-2 gap-4">${getClasses().map(c=>`<div class="border p-3 rounded">${c.className}<br>Teacher: ${c.teacherIncharge}<br>Strength: ${c.strength}</div>`).join('')}</div></div>`; }
+  function renderFees() { return `<div class="bg-white p-6 rounded-2xl"><h2>Fee Records</h2><table class="w-full">${getFees().map(f=>`<tr><td>${f.studentName}</td><td>$${f.amount}</td><td>${f.dueDate}</td><td>${f.status}</td></tr>`).join('')}</table></div>`; }
+  function renderExams() { return `<div class="bg-white p-6 rounded-2xl"><h2>Exams</h2>${getExams().map(e=>`<div class="border p-3 my-2">${e.examName} - ${e.class} on ${e.date}</div>`).join('')}</div>`; }
+  function renderTimetable() { return `<div class="bg-white p-6 rounded-2xl"><h2>Timetable</h2><table class="w-full border">${getTimetable().map(t=>`<tr><td class="border p-1">${t.day}</td><td class="border p-1">${t.p1}</td><td class="border p-1">${t.p2}</td><td class="border p-1">${t.p3}</td><td class="border p-1">${t.p4}</td></tr>`).join('')}</table></div>`; }
+  function renderAILessons() {
+    return `<div class="space-y-5"><div class="bg-white p-6 rounded-2xl"><h2 class="text-xl font-bold">📢 Create AI Lesson</h2><input id="lessonTitle" placeholder="Title" class="border p-2 w-full my-2"><textarea id="lessonContent" placeholder="Content" rows="3" class="border p-2 w-full"></textarea><select id="lessonClass" class="border p-2 w-full my-2"><option>All Students</option>${[...new Set(getStudents().map(s=>s.class))].map(c=>`<option>${c}</option>`).join('')}</select><label><input type="checkbox" id="aiCallEnabled" checked> Enable AI voice call to parents</label><button id="publishLessonBtn" class="bg-indigo-600 text-white px-5 py-2 rounded-xl mt-3">Publish & Call</button></div><div class="bg-white p-6 rounded-2xl"><h3>📜 History</h3>${getLessons().map(l=>`<div class="border-b p-2"><b>${l.title}</b><br>${l.content}<br><span class="text-sm text-gray-500">${l.callStatus} | ${l.callsMade} calls</span></div>`).join('')}</div></div>`;
+  }
+  function renderParents() {
+    let parents = getParents(), students = getStudents();
+    return `<div class="bg-white p-6 rounded-2xl"><div class="flex justify-between"><h2 class="text-xl font-bold">Parent Accounts (Unique Login Codes)</h2><button id="addParentBtn" class="bg-green-600 text-white px-4 py-2 rounded-xl">+ Create Parent Code</button></div><table class="w-full mt-4"><thead><tr><th>Parent Code</th><th>Parent Name</th><th>Linked Students</th><th></th></tr></thead><tbody>${parents.map(p=>`<tr><td><code>${p.code}</code></td><td>${p.name}</td><td>${p.studentIds.map(id=>students.find(s=>s.id===id)?.name).join(', ')}</td><td><button data-code="${p.code}" class="delParentBtn text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  function attachEvents() {
+    document.getElementById('addStudentBtn')?.addEventListener('click',()=>{let n=prompt("Name"),c=prompt("Class"),r=prompt("Roll"),pn=prompt("Parent Name"),pp=prompt("Parent Phone");if(n&&c)addStudent(n,c,r,pn,pp);render();});
+    document.querySelectorAll('.delStBtn').forEach(btn=>btn.addEventListener('click',(e)=>{let id=parseInt(btn.dataset.id);deleteStudentById(id);render();}));
+    document.getElementById('addTeacherBtn')?.addEventListener('click',()=>{let n=prompt("Name"),sub=prompt("Subject"),ca=prompt("Class"),ph=prompt("Phone");if(n)addTeacher(n,sub,ca,ph);render();});
+    document.querySelectorAll('.delTeachBtn').forEach(btn=>btn.addEventListener('click',(e)=>{let id=parseInt(btn.dataset.id);deleteTeacherById(id);render();}));
+    document.getElementById('publishLessonBtn')?.addEventListener('click',()=>{let title=document.getElementById('lessonTitle').value,content=document.getElementById('lessonContent').value,target=document.getElementById('lessonClass').value,enable=document.getElementById('aiCallEnabled').checked;if(title&&content)addAILesson(title,content,target,enable);render();});
+    document.getElementById('addParentBtn')?.addEventListener('click',()=>{let code=prompt("New Parent Code (e.g., PARENT999)"),name=prompt("Parent Name"),studentIds=[];let allStudents=getStudents();let idsStr=prompt("Enter student IDs separated by commas (e.g., 1,2)");if(idsStr) studentIds=idsStr.split(',').map(Number).filter(n=>!isNaN(n));if(code&&name)addParentCode(code,studentIds,name);render();});
+    document.querySelectorAll('.delParentBtn').forEach(btn=>btn.addEventListener('click',(e)=>{let code=btn.dataset.code;deleteParentCode(code);render();}));
+  }
+
+  document.querySelectorAll('.nav-item').forEach(link=>{link.addEventListener('click',(e)=>{e.preventDefault();currentPage=link.dataset.page;render();document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active-nav'));link.classList.add('active-nav');});});
+  render();
+</script>
+</body>
+</html>
