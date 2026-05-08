@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Portal | EduManage Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body { background: #eef2f5; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: white; border-radius: 1rem; padding: 10px 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 1000; }
+  </style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto p-5">
+  <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div class="bg-gradient-to-r from-green-600 to-teal-600 px-6 py-4 flex justify-between items-center text-white">
+      <div class="flex items-center gap-2"><i class="fas fa-child text-2xl"></i><span class="font-bold text-xl">Parent Portal</span></div>
+      <button id="logoutBtn" class="bg-white text-green-700 px-4 py-1 rounded-full text-sm hidden"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+    <div id="loginScreen" class="p-8">
+      <h2 class="text-2xl font-bold text-center mb-6">Parent Login</h2>
+      <div class="max-w-sm mx-auto"><input type="text" id="parentCode" placeholder="Enter your unique code (e.g., PARENT101)" class="w-full border rounded-xl p-3 mb-4"><button id="loginBtn" class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold">Login</button><p class="text-xs text-gray-500 mt-4 text-center">Demo codes: PARENT101, PARENT102, PARENT103</p></div>
+    </div>
+    <div id="appContent" class="hidden p-6"></div>
+  </div>
+</div>
+
+<script>
+  function getStudents() { return JSON.parse(localStorage.getItem('school_students') || '[]'); }
+  function getFees() { return JSON.parse(localStorage.getItem('school_fees') || '[]'); }
+  function getLessons() { return JSON.parse(localStorage.getItem('school_ai_lessons') || '[]'); }
+  function getExams() { return JSON.parse(localStorage.getItem('school_exams') || '[]'); }
+  function getTimetable() { return JSON.parse(localStorage.getItem('school_timetable') || '[]'); }
+  function getParents() { return JSON.parse(localStorage.getItem('school_parents') || '[]'); }
+  function updateFeeStatus(studentId, newStatus) {
+    let fees = getFees();
+    let feeIndex = fees.findIndex(f => f.studentId === studentId);
+    if (feeIndex !== -1) { fees[feeIndex].status = newStatus; localStorage.setItem('school_fees', JSON.stringify(fees)); }
+    let students = getStudents();
+    let student = students.find(s => s.id === studentId);
+    if (student) { student.feeStatus = newStatus; localStorage.setItem('school_students', JSON.stringify(students)); }
+  }
+
+  let currentParent = null;
+  let currentStudents = [];
+
+  function login(code) {
+    let parents = getParents();
+    let parent = parents.find(p => p.code === code);
+    if (!parent) { alert("Invalid parent code. Please try again."); return false; }
+    currentParent = parent;
+    currentStudents = getStudents().filter(s => parent.studentIds.includes(s.id));
+    if (currentStudents.length === 0) { alert("No students linked to this account. Contact admin."); return false; }
+    return true;
+  }
+
+  function renderParentApp() {
+    if (currentStudents.length === 0) return;
+    let student = currentStudents[0]; // for simplicity, show first child (you can add a selector)
+    let fee = getFees().find(f => f.studentId === student.id);
+    let lessons = getLessons().filter(l => l.targetClass === student.class || l.targetClass === "All Students");
+    let exams = getExams().filter(e => e.class === student.class);
+    let timetable = getTimetable();
+    let html = `
+      <div class="space-y-6">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-green-50 p-4 rounded-2xl"><i class="fas fa-user-graduate"></i><h3 class="font-bold">${student.name}</h3><p>${student.class} | Roll ${student.roll}</p></div>
+          <div class="bg-blue-50 p-4 rounded-2xl"><i class="fas fa-chart-line"></i><h3 class="font-bold">Attendance</h3><p class="text-2xl">92%</p></div>
+          <div class="bg-purple-50 p-4 rounded-2xl"><i class="fas fa-coins"></i><h3 class="font-bold">Fee Status</h3><p class="text-xl ${fee?.status === 'Paid' ? 'text-green-600' : 'text-red-500'}">${fee?.status || 'N/A'}</p><p class="text-xs">Due: ${fee?.dueDate || '-'}</p>${fee?.status !== 'Paid' ? `<button id="payNowBtn" class="mt-2 bg-green-600 text-white px-3 py-1 rounded-lg text-sm">Pay Now</button>` : ''}</div>
+          <div class="bg-amber-50 p-4 rounded-2xl"><i class="fas fa-robot"></i><h3 class="font-bold">AI Lessons</h3><p>${lessons.length} updates</p></div>
+        </div>
+        <div class="border-t pt-4"><h3 class="font-bold flex gap-2"><i class="fas fa-newspaper"></i>Recent AI Lessons</h3>${lessons.slice(0,3).map(l=>`<div class="bg-gray-50 p-3 rounded-xl my-2"><b>${l.title}</b><p class="text-sm">${l.content}</p><span class="text-xs text-gray-400">${l.timestamp} | AI Call: ${l.callStatus}</span></div>`).join('')||'<p class="text-gray-400">No lessons yet.</p>'}</div>
+        <div class="border-t pt-4"><h3 class="font-bold">📅 Upcoming Exams</h3>${exams.map(e=>`<div class="border-l-4 border-green-400 p-3 bg-gray-50 my-2"><b>${e.examName}</b><br>${e.date} at ${e.time}<br>${e.subjects}</div>`).join('')||'<p>No exams scheduled.</p>'}</div>
+        <div class="border-t pt-4"><h3 class="font-bold">⏰ Weekly Timetable</h3><table class="w-full text-sm border">${timetable.map(t=>`<tr><td class="border p-1 font-bold">${t.day}</td><td class="border p-1">${t.p1}</td><td class="border p-1">${t.p2}</td><td class="border p-1">${t.p3}</td><td class="border p-1">${t.p4}</td></tr>`).join('')}</table></div>
+        <div class="border-t pt-4"><h3 class="font-bold"><i class="fas fa-phone-alt"></i> AI Call Log</h3>${lessons.map(l=>`<div class="text-sm py-1"><i class="fas fa-robot"></i> ${l.title} – ${l.callStatus} (${l.callsMade || 0} calls)</div>`).join('')||'<p>No call history.</p>'}</div>
+      </div>
+    `;
+    document.getElementById('appContent').innerHTML = html;
+    document.getElementById('appContent').classList.remove('hidden');
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('logoutBtn').classList.remove('hidden');
+    let payBtn = document.getElementById('payNowBtn');
+    if (payBtn) {
+      payBtn.addEventListener('click', () => {
+        if (confirm(`Pay $${fee.amount} for ${student.name}?`)) {
+          updateFeeStatus(student.id, 'Paid');
+          showToast("Payment successful! Fee status updated.");
+          renderParentApp();
+        }
+      });
+    }
+  }
+
+  function showToast(msg) { let t=document.createElement('div'); t.className="toast"; t.innerText=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
+
+  document.getElementById('loginBtn').addEventListener('click', () => {
+    let code = document.getElementById('parentCode').value.trim();
+    if (login(code)) renderParentApp();
+    else alert("Invalid code");
+  });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    currentParent = null; currentStudents = [];
+    document.getElementById('appContent').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('logoutBtn').classList.add('hidden');
+    document.getElementById('parentCode').value = '';
+  });
+</script>
+</body>
+</html>
